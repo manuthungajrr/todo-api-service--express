@@ -27,6 +27,17 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.0",
+    "node-cron": "^3.0.3",
     "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.11",
+    "jest": "^29.7.0",
+    "supertest": "^7.1.0",
+    "ts-jest": "^29.2.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   }
 }
