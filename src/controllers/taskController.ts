@@ -17,7 +17,9 @@ export const fetchTasks = async (req: Request, res: Response) => {
     req.query.status ? String(req.query.status) : null,
     req.query.priority ? String(req.query.priority) : null,
     req.query.startDate ? String(req.query.startDate) : null,
-    req.query.endDate ? String(req.query.endDate) : null
+    req.query.endDate ? String(req.query.endDate) : null,
+    req.query.page ? Number(req.query.page) : undefined,
+    req.query.limit ? Number(req.query.limit) : undefined
   );
   res.json(tasks);
 };

@@ -8,16 +8,17 @@ export const getTasks = async (
   status?: string | null,
   priority?: string | null,
   startDate?: string | null,
-  endDate?: string | null
+  endDate?: string | null,
+  page?: number | null,
+  limit?: number | null
 ) => {
   try {
-    // Fetch tasks for the user
     let query = "SELECT * FROM tasks WHERE user_id = ?";
     const queryParams: (string | number)[] = [userId];
 
-    // Dynamically add filters based on provided parameters
+    // Apply filters dynamically
     if (search != undefined) {
-      query += " AND title LIKE ? ";
+      query += " AND title LIKE ?";
       queryParams.push(`%${search}%`);
     }
     if (status != undefined) {
@@ -37,40 +38,57 @@ export const getTasks = async (
       queryParams.push(endDate ?? "");
     }
 
+    // Fetch total count of tasks (for pagination)
+    const countQuery = `SELECT COUNT(*) as total FROM tasks WHERE user_id = ?`;
+    const [countResult] = await pool.query(countQuery, [userId]);
+    const totalCount = countResult[0].total;
+
+    console.log("page", page);
+    console.log("limit", limit);
+    let totalPages = 0;
+
+    if (page != undefined && limit != undefined) {
+      totalPages = Math.ceil(totalCount / limit);
+
+      const offset = (page - 1) * limit;
+      query += " LIMIT ? OFFSET ?";
+      queryParams.push(limit, offset);
+    }
+
     console.log("query", query);
     console.log("params", queryParams);
 
-    // Execute the query with the dynamically constructed query and parameters
     const [result] = await pool.query(query, queryParams);
-
     const tasks = result as {
       id: number;
       parent_task_id: number | null;
       parentTask: number | null;
-    }[]; // Type assertion to handle rows as an array of tasks
+    }[];
 
-    // Loop through each task to check for parent_task and populate it if not null
+    // Fetch parent task details for each task
     for (const task of tasks) {
       if (task.parent_task_id !== null) {
-        // Fetch the parent task details
         const [parentTaskResult] = await pool.query(
           "SELECT * FROM tasks WHERE id = ?",
           [task.parent_task_id]
         );
-        const parentTask = parentTaskResult[0]; // Get the first result (parent task)
-        task.parentTask = parentTask || null; // If parent task exists, set it, else set null
+        task.parentTask = parentTaskResult[0] || null;
       }
     }
 
-    // Return the formatted response
     return {
       status: 200,
       success: true,
       message: "Results fetched successfully",
-      data: tasks, // Tasks with populated parent_task
+      data: tasks,
+      pagination: {
+        totalRecords: totalCount,
+        totalPages: totalPages,
+        currentPage: page,
+        limit: limit,
+      },
     };
   } catch (error) {
-    // In case of an error, return a failure response
     return {
       status: 500,
       success: false,
